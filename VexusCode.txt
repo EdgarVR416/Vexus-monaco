@@ -1,0 +1,66 @@
+
+
+ MONACO:
+
+ private async void InitializeAsync()
+ {
+     try
+     {
+         await Editor.EnsureCoreWebView2Async(null);
+         Editor.CoreWebView2.Navigate(new Uri($"file:///{Directory.GetCurrentDirectory()}/VexusNewMonaco/index.html").ToString());
+     }
+     catch (Exception ex)
+     {
+         MessageBox.Show($"Error initializing WebView2: {ex.Message}", "Initialization Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+     }
+ }
+
+
+
+
+EXECUTE: 
+
+string scriptToExecute = await Editor.ExecuteScriptAsync("GetText();");
+string rawScript = JsonConvert.DeserializeObject<string>(scriptToExecute);
+CoreFunctions.ExecuteScript(rawScript);
+
+
+CLEAR TEXT: 
+
+await Editor.ExecuteScriptAsync($"SetText(``);");
+
+
+SAVE FILE:
+
+try
+{
+    SaveFileDialog saveFileDialog1 = new SaveFileDialog
+    {
+        Filter = "Lua Files (*.lua)|*.lua|Text Files (*.txt)|*.txt",
+        DefaultExt = "lua",
+        Title = "Save Lua or Text File"
+    };
+
+    if (saveFileDialog1.ShowDialog() == DialogResult.OK)
+    {
+        string textToSave = await Editor.ExecuteScriptAsync("GetText();");
+        string rawText = JsonConvert.DeserializeObject<string>(textToSave);
+        File.WriteAllText(saveFileDialog1.FileName, rawText);
+    }
+}
+catch (Exception ex)
+{
+    MessageBox.Show($"Error saving file: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+}
+
+
+OPEN FILE:
+
+OpenFileDialog dialog = new OpenFileDialog();
+dialog.Filter = "Txt Files (*.txt)|*.txt|Lua Files (*.lua)|*.lua|All Files (*.*)|*.*";
+
+if (dialog.ShowDialog() == DialogResult.OK)
+{
+    string script = File.ReadAllText(dialog.FileName);
+    await Editor.CoreWebView2.ExecuteScriptAsync($"editor.setValue(`{script}`)");
+}
